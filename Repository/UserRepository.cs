@@ -52,7 +52,11 @@ namespace MyWebAppApi.Repository
 
             Credential credential = new Credential();
 
+            cmd.Parameters.AddWithValue("@username", username);
+
             await conn.OpenAsync();
+
+
 
             var read = await cmd.ExecuteReaderAsync();
 

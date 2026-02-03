@@ -11,6 +11,8 @@ namespace MyApp.Models
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public int Id { get; set; }
 
+        [Column("username")]
+
         [MaxLength(255)]
         public string UserName { get; set; } = string.Empty;
 
