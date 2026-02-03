@@ -1,0 +1,28 @@
+﻿using System;
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+
+namespace MyApp.Models
+{
+    [Table("credentials", Schema = "auth")]
+    public class Credential
+    {
+        [Key]
+        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
+        public int Id { get; set; }
+
+        [MaxLength(255)]
+        public string UserName { get; set; } = string.Empty;
+
+        [Column("hashed_password")]
+        [Required]
+        [MaxLength(225)]
+        public string HashedPassword { get; set; } = string.Empty;
+
+        [Column("created_at")]
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+        [Column("login_at")]
+        public DateTime? LoginAt { get; set; }
+    }
+}
