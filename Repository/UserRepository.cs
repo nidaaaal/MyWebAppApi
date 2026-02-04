@@ -82,10 +82,12 @@ namespace MyWebAppApi.Repository
 
             using (SqlCommand cmd = new SqlCommand(sql, conn))
             {
+                await conn.OpenAsync();
+
                 cmd.Parameters.AddWithValue("@now", now);
                 cmd.Parameters.AddWithValue("@id", id);
 
-                int result = await cmd.ExecuteNonQueryAsync();
+                await cmd.ExecuteNonQueryAsync();
 
             }
         }
