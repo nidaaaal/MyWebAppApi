@@ -47,9 +47,9 @@ namespace MyWebAppApi.Repository
         public async Task<Credential?> GetUserByUsername(string username)
         {
             string sql = "SELECT id,username,hashed_password FROM auth.credentials WHERE username = @username;";
-            var conn = GetConnection();
+            await using var conn = GetConnection();
 
-            SqlCommand cmd = new SqlCommand(sql, conn);
+            await using SqlCommand cmd = new SqlCommand(sql, conn);
 
             Credential credential = new Credential();
 
@@ -59,22 +59,22 @@ namespace MyWebAppApi.Repository
 
 
 
-            var read = await cmd.ExecuteReaderAsync();
+            await using var read = await cmd.ExecuteReaderAsync();
 
-            if(await read.ReadAsync())
-            { 
+            if (!await read.ReadAsync()) return null;
+         
                 credential.Id = Convert.ToInt32(read["id"]);
                 credential.UserName = Convert.ToString(read["username"]) ?? "";
                 credential.HashedPassword = Convert.ToString(read["hashed_password"]) ?? "";
-            }
 
-            return credential != null ? credential : null;
+
+            return credential;
 
         }
 
         public async Task SaveLogin(int id)
         {
-            var conn = GetConnection();
+           await using var conn = GetConnection();
 
             DateTime now = DateTime.Now;
 
