@@ -1,3 +1,4 @@
+using MyWebAppApi.MIddleware;
 using MyWebAppApi.Repository;
 using MyWebAppApi.Repository.Interfaces;
 using MyWebAppApi.Services;
@@ -20,6 +21,8 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+
+app.UseExceptionMiddleware();
 
 app.UseHttpsRedirection();
 
