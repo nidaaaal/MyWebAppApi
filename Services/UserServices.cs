@@ -69,6 +69,8 @@ namespace MyWebAppApi.Services
 
             if (!BCrypt.Net.BCrypt.Verify(dto.Password, result.HashedPassword)) return ApiResponseBuilder.Fail<string>("Invalid Credentials",401);
 
+            await _userRepository.SaveLogin(result.Id);
+
             return ApiResponseBuilder.Success<string>(null!, "Login Successful");
         }
 

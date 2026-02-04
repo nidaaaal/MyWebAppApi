@@ -8,5 +8,6 @@ namespace MyWebAppApi.Repository.Interfaces
     {
         Task<int> RegisterUser(RegisterRequestDto dto, string hashedpass, int age);
         Task<Credential?> GetUserByUsername(string username);
+        Task SaveLogin(int id);
     }
 }

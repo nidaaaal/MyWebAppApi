@@ -2,6 +2,7 @@
 using MyApp.Models;
 using MyWebAppApi.DTOs;
 using MyWebAppApi.Repository.Interfaces;
+using System.Net;
 
 namespace MyWebAppApi.Repository
 {
@@ -69,6 +70,24 @@ namespace MyWebAppApi.Repository
 
             return credential != null ? credential : null;
 
+        }
+
+        public async Task SaveLogin(int id)
+        {
+            var conn = GetConnection();
+
+            DateTime now = DateTime.Now;
+
+            string sql = "UPDATE auth.credentials SET login_at = @now WHERE id = @id;";
+
+            using (SqlCommand cmd = new SqlCommand(sql, conn))
+            {
+                cmd.Parameters.AddWithValue("@now", now);
+                cmd.Parameters.AddWithValue("@id", id);
+
+                int result = await cmd.ExecuteNonQueryAsync();
+
+            }
         }
     }
 }
