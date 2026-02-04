@@ -31,5 +31,20 @@ namespace MyWebAppApi.Controllers
             var response = await _userServices.LoginUser(requestDto);
             return Ok(response);
         }
+
+        [HttpGet("profile/{id}")]
+        public async Task<IActionResult> GetUserProfile(int id)
+        {
+            var response = await _userServices.GetUserProfile(id);
+            return Ok(response);
+        }
+
+        [HttpPut("profile/{id}")]
+        public async Task<IActionResult> UpdateUserProfile(int id,UpdateProfileDto updateProfileDto)
+        {
+            var response = await _userServices.UpdateUserProfile(id,updateProfileDto);
+            return Ok(response);
+        }
+
     }
 }

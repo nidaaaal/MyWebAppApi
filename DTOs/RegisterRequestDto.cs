@@ -5,6 +5,7 @@ namespace MyWebAppApi.DTOs
 {
     public class RegisterRequestDto
     {
+            [Required]
             [MaxLength(255)]
             public string UserName { get; set; } = null!;
 
@@ -20,7 +21,7 @@ namespace MyWebAppApi.DTOs
 
             [MaxLength(50)]
 
-            public string? LastName { get; set; }
+            public string LastName { get; set; } = null!;
 
             [MaxLength(50)]
             public string? DisplayName { get; set; }

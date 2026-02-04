@@ -1,4 +1,6 @@
 ﻿using BCrypt.Net;
+using Microsoft.AspNetCore.Http.HttpResults;
+using MyWebApp.Models;
 using MyWebAppApi.DTOs;
 using MyWebAppApi.Helper;
 using MyWebAppApi.Repository.Interfaces;
@@ -73,7 +75,36 @@ namespace MyWebAppApi.Services
 
             return ApiResponseBuilder.Success<string>(null!, "Login Successful");
         }
+        public async Task<ApiResponse<Users?>> GetUserProfile(int id)
+        {
+            var result = await _userRepository.GetUserProfile(id);
+            if (result == null) return ApiResponseBuilder.Fail<Users?>("User not found", 404);
+            return ApiResponseBuilder.Success<Users?>(result, "User profile retrieved successfully");
+        }
 
+        public async Task<ApiResponse<string>> UpdateUserProfile(int id, UpdateProfileDto updateProfileDto)
+        {
+            var Today = DateTime.Today;
+            int age = Today.Year - updateProfileDto.DateOfBirth.Year;
+
+            if (updateProfileDto.DateOfBirth.Month > Today.Month || (updateProfileDto.DateOfBirth.Month == Today.Month && Today.Day < updateProfileDto.DateOfBirth.Day))
+            {
+                age--;
+            }
+
+            var result = await _userRepository.UpdateUserProfile(id, updateProfileDto,age);
+
+            if(result.ResultCode == 1)
+            {
+                return ApiResponseBuilder.Success<string>(null!,result.Message ?? "Profile Updated Sucessfully");
+            }
+            if(result.ResultCode == -1)
+            {
+                return ApiResponseBuilder.Fail<string>(result.Message ?? "user notfound",404);
+            }
+
+            return ApiResponseBuilder.Fail<string>(result.Message ?? "server down", 500);
+        }
 
 
 
