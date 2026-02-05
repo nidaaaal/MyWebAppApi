@@ -116,7 +116,7 @@ namespace MyWebAppApi.Repository
                     LastName = Convert.ToString(read["last_name"]),
                     DisplayName = read["display_name"] == DBNull.Value ? null : Convert.ToString(read["display_name"]),
                     DateOfBirth = Convert.ToDateTime(read["date_of_birth"]),
-                    Gender = Convert.ToByte(read["gender"]),
+                    Gender = Convert.ToBoolean(read["gender"]),
                     Age = Convert.ToInt32(read["age"]),
                     Address = Convert.ToString(read["address"]),
                     City = read["city"] == DBNull.Value ? null : Convert.ToString(read["city"]),

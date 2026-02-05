@@ -26,7 +26,7 @@ namespace MyWebApp.Models
         public DateTime DateOfBirth { get; set; }
 
         [Column("gender")]
-        public byte Gender { get; set; }
+        public bool Gender { get; set; }
         [Column("age")]
         public int Age { get; set; }
         [Column("address")]

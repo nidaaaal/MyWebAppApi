@@ -63,17 +63,17 @@ namespace MyWebAppApi.Services
             }
         }
 
-        public async Task<ApiResponse<string>> LoginUser(LoginRequestDto dto)
+        public async Task<ApiResponse<int>> LoginUser(LoginRequestDto dto)
         {
             var result = await _userRepository.GetUserByUsername(dto.UserName);
 
-            if (result == null) return ApiResponseBuilder.Fail<string>("No user exists with the username",404);
+            if (result == null) return ApiResponseBuilder.Fail<int>("No user exists with the username",404);
 
-            if (!BCrypt.Net.BCrypt.Verify(dto.Password, result.HashedPassword)) return ApiResponseBuilder.Fail<string>("Invalid Credentials",401);
+            if (!BCrypt.Net.BCrypt.Verify(dto.Password, result.HashedPassword)) return ApiResponseBuilder.Fail<int>("Invalid Credentials",401);
 
             await _userRepository.SaveLogin(result.Id);
 
-            return ApiResponseBuilder.Success<string>(null!, "Login Successful");
+            return ApiResponseBuilder.Success<int>(result.Id, "Login Successful");
         }
         public async Task<ApiResponse<Users?>> GetUserProfile(int id)
         {
