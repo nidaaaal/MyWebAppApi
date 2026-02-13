@@ -44,6 +44,9 @@ namespace MyWebApp.Models
 
         [Column("mobile")]
         public string? Mobile { get; set; }
+
+        [Column("profile_image_path")]
+        public string? ProfileImagePath { get; set; }
     }
 
 }

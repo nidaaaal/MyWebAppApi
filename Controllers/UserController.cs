@@ -46,5 +46,21 @@ namespace MyWebAppApi.Controllers
             return Ok(response);
         }
 
+        [HttpPatch("Password/{id}")]
+        public async Task<IActionResult> ChangePassword(int id,PasswordChangeDto passwordChangeDto)
+        {
+            var response =  await _userServices.ChangePassword(id, passwordChangeDto.OldPassword, passwordChangeDto.NewPassword);
+            return Ok(response);
+        }
+
+        [HttpPatch("profile/image{id}")]
+        public async Task<IActionResult> Update(int id,ProfileImageDto profileImageDto)
+        {
+            var response = await _userServices.UpdateImage(id, profileImageDto.File);
+
+            return Ok(response);
+        }
+
+
     }
 }

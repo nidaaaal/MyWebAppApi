@@ -3,6 +3,7 @@ using MyApp.Models;
 using MyWebApp.Models;
 using MyWebAppApi.DTOs;
 using MyWebAppApi.Repository.Interfaces;
+using System.Data;
 using System.Diagnostics;
 using System.Net;
 
@@ -98,7 +99,7 @@ namespace MyWebAppApi.Repository
         {
             await using var conn = GetConnection();
 
-            string sql = "SELECT * FROM app.users WHERE id = @id;";
+            string sql = "SELECT * FROM app.users WHERE user_id = @id;";
 
             using (SqlCommand cmd = new SqlCommand(sql, conn))
             {
@@ -123,8 +124,8 @@ namespace MyWebAppApi.Repository
                     State = read["state"] == DBNull.Value ? null : Convert.ToString(read["state"]),
                     ZipCode = Convert.ToInt32(read["zipcode"]),
                     Phone = Convert.ToString(read["phone"]),
-                    Mobile = read["mobile"] == DBNull.Value ? null : Convert.ToString(read["mobile"])
-
+                    Mobile = read["mobile"] == DBNull.Value ? null : Convert.ToString(read["mobile"]),
+                    ProfileImagePath = read["profile_image_path"] == DBNull.Value ? null : Convert.ToString(read["profile_image_path"])
                 };
 
             }
@@ -159,8 +160,71 @@ namespace MyWebAppApi.Repository
                 Message = Convert.ToString(read["Message"]) ?? ""
             };
                
+        }
+
+        public async Task<string?> GetPasswordById(int id)
+        {
+            string sql = "SELECT hashed_password FROM auth.credentials WHERE id = @id;";
+            await using var conn = GetConnection();
+
+            await using SqlCommand cmd = new SqlCommand(sql, conn);
+
+            cmd.Parameters.AddWithValue("@id", id);
+
+            await conn.OpenAsync();
 
 
+            await using var read = await cmd.ExecuteReaderAsync();
+
+            if (!await read.ReadAsync()) return null;
+
+            return Convert.ToString(read["hashed_password"]);
+
+        }
+
+        public async Task<bool> SavePassword(int id, string password)
+        {
+
+            string sql =
+                "Update auth.credentials  SET hashed_password = @password , password_changed_at = @now WHERE id = @id";
+            await using var conn = GetConnection();
+
+            await using SqlCommand cmd = new SqlCommand(sql, conn);
+
+            cmd.Parameters.AddWithValue("@id", id);
+            cmd.Parameters.AddWithValue("@password", password);
+            cmd.Parameters.AddWithValue("@now", DateTime.Now);
+
+            await conn.OpenAsync();
+
+
+            var result = await cmd.ExecuteNonQueryAsync();
+
+
+            return result > 0;
+
+        }
+
+        public async Task<bool> UploadImage(int id, byte[] imageBytes, string imagePath)
+        {
+            try
+            {
+                string sql = "UPDATE app.users SET profile_image = @img, profile_image_path = @path, profile_image_updated_at = GETDATE() WHERE user_id = @id;";
+                await using var conn = GetConnection();
+                await using SqlCommand cmd = new SqlCommand(sql, conn);
+                cmd.Parameters.Add("@img", SqlDbType.VarBinary).Value = imageBytes;
+                cmd.Parameters.AddWithValue("@path", imagePath);
+                cmd.Parameters.AddWithValue("@id", id);
+
+                await conn.OpenAsync();
+                var result = await cmd.ExecuteNonQueryAsync();
+                Debug.WriteLine($"dbresult : {result}");
+                return result > 0;
+            }
+            catch (Exception ex)
+            {
+                throw new Exception(ex.Message);
+            }
         }
     }
 }

@@ -11,5 +11,10 @@ namespace MyWebAppApi.Services.Interfaces
         Task<ApiResponse<Users?>> GetUserProfile(int id);
 
         Task<ApiResponse<string>> UpdateUserProfile(int id,UpdateProfileDto updateProfileDto);
+
+        Task<ApiResponse<string>> ChangePassword(int id, string oldpassword, string password);
+
+        Task<ApiResponse<string>> UpdateImage(int id, IFormFile file);
+
     }
 }

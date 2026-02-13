@@ -11,9 +11,12 @@ namespace MyWebAppApi.Services
     public class UserServices : IUserServices
     {
         private readonly IUserRepository _userRepository;
-        public UserServices(IUserRepository userRepository) 
+        private readonly IWebHostEnvironment _env;
+
+        public UserServices(IUserRepository userRepository,IWebHostEnvironment hostEnvironment) 
         { 
             _userRepository = userRepository;
+            _env = hostEnvironment;
         }
 
         public async Task<ApiResponse<string>> RegisterUser(RegisterRequestDto dto)
@@ -35,6 +38,10 @@ namespace MyWebAppApi.Services
             if(dto.DateOfBirth.Month > Today.Month || (dto.DateOfBirth.Month == Today.Month && Today.Day < dto.DateOfBirth.Day))
             {
                 age--;
+            }
+            if (age < 13)
+            {
+                return ApiResponseBuilder.Fail<string>("Underage!", 500);
             }
 
             try
@@ -107,6 +114,65 @@ namespace MyWebAppApi.Services
         }
 
 
+        public async Task<ApiResponse<string>>ChangePassword(int id, string oldpassword, string password)
+        {
+            if(oldpassword == password) return ApiResponseBuilder.Fail<string>("New password cannot be the same as the old password.", 400);
 
+            var currentPassword = await _userRepository.GetPasswordById(id);
+
+            if (currentPassword == null) return ApiResponseBuilder.Fail<string>("User Notfound !",404);
+
+            if (!BCrypt.Net.BCrypt.Verify(oldpassword, currentPassword)) return ApiResponseBuilder.Fail<string>("You Entered a wrong Password!" ,401);
+
+            string hashedNewPassword = BCrypt.Net.BCrypt.HashPassword(password);
+
+            var response = await _userRepository.SavePassword(id, hashedNewPassword);
+
+
+            if (!response) return ApiResponseBuilder.Fail<string>( "password changing failed" ,500);
+
+            return ApiResponseBuilder.Success<string>(null!,"Password Changed successfully");
+
+        }
+
+        public async Task<ApiResponse<string>> UpdateImage(int id, IFormFile file)
+        {
+            byte[] bytes;
+
+            using (var ms = new MemoryStream())
+            {
+                await file.CopyToAsync(ms);
+                bytes = ms.ToArray();
+
+            }
+
+            string folder = Path.Combine(_env.WebRootPath, "uploads", "users", id.ToString());
+
+            Directory.CreateDirectory(folder);
+
+            var existingFiles = Directory.GetFiles(folder);
+
+            foreach (var files in existingFiles)
+            {
+                File.Delete(files);
+            }
+
+            string ext = Path.GetExtension(file.FileName).ToLower();
+            string fileName = "profile" + ext;
+
+            string fullPath = Path.Combine(folder, fileName);
+
+            using var stram = new FileStream(fullPath, FileMode.Create);
+            await file.CopyToAsync(stram);
+
+            string relativePath = $"/uploads/users/{id}/{fileName}";
+
+
+            var response = await _userRepository.UploadImage(id, bytes, relativePath);
+
+            if (!response) return ApiResponseBuilder.Fail<string>("Uploadig Image Failed!",500);
+
+            return ApiResponseBuilder.Success<string>(null!, "Profile Updated Successfully");
+        }
     }
 }

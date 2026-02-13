@@ -1,4 +1,5 @@
 ﻿using MyWebAppApi.Helper;
+using MyWebAppApi.Helper.AttributeValidation;
 using System.ComponentModel.DataAnnotations;
 
 namespace MyWebAppApi.DTOs
@@ -26,7 +27,7 @@ namespace MyWebAppApi.DTOs
         public bool Gender { get; set; }
 
         [Required]
-        [MaxLength(500)]
+        [MinLength(10), MaxLength(500)]
         public string Address { get; set; } = null!;
 
         [MaxLength(50)]
@@ -36,13 +37,14 @@ namespace MyWebAppApi.DTOs
         public string? State { get; set; } = null;
 
         [Required]
-        [Range(100000, 999999)]
+        [RegularExpression(@"^\d{6}$", ErrorMessage = "Enter a valid 6-digit ZIP code")]
         public int ZipCode { get; set; }
 
         [Required]
-        [MaxLength(10)]
+        [RegularExpression(@"^\d{10}$", ErrorMessage = "Enter a valid 10-digit phone number")]
         public string Phone { get; set; } = null!;
-        [MaxLength(10)]
+
+        [RegularExpression(@"^\d{10}$", ErrorMessage = "Enter a valid 10-digit phone number")]
         public string? Mobile { get; set; } = null;
     }
 }

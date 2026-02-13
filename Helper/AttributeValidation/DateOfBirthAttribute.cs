@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace MyWebAppApi.Helper
+namespace MyWebAppApi.Helper.AttributeValidation
 {
 
     public class DateOfBirthAttribute : ValidationAttribute
@@ -23,6 +23,7 @@ namespace MyWebAppApi.Helper
                 {
                     return new ValidationResult("Date of birth is not valid (too old).");
                 }
+
 
                 return ValidationResult.Success;
             }

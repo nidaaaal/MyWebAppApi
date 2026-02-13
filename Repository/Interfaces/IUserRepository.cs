@@ -12,6 +12,9 @@ namespace MyWebAppApi.Repository.Interfaces
         Task SaveLogin(int id);
         Task<Users?> GetUserProfile(int id);
         Task<DbResponse> UpdateUserProfile(int id,UpdateProfileDto updateProfileDto,int age);
+        Task<string?> GetPasswordById(int id);
+        Task<bool> SavePassword(int id, string password);
+        Task<bool> UploadImage(int id, byte[] imageBytes, string imagePath);
 
     }
 }
