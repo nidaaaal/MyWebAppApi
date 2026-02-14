@@ -17,21 +17,6 @@ namespace MyWebAppApi.Controllers
 
         }
 
-        [HttpPost("register")]
-        public async Task<IActionResult> Registration(RegisterRequestDto requestDto)
-        {
-
-          var response = await  _userServices.RegisterUser(requestDto);
-            return Ok(response);
-
-        }
-        [HttpPost("login")]
-        public async Task<IActionResult> Login(LoginRequestDto requestDto)
-        {
-            var response = await _userServices.LoginUser(requestDto);
-            return Ok(response);
-        }
-
         [HttpGet("profile/{id}")]
         public async Task<IActionResult> GetUserProfile(int id)
         {
@@ -46,15 +31,8 @@ namespace MyWebAppApi.Controllers
             return Ok(response);
         }
 
-        [HttpPatch("Password/{id}")]
-        public async Task<IActionResult> ChangePassword(int id,PasswordChangeDto passwordChangeDto)
-        {
-            var response =  await _userServices.ChangePassword(id, passwordChangeDto.OldPassword, passwordChangeDto.NewPassword);
-            return Ok(response);
-        }
-
-        [HttpPatch("profile/image{id}")]
-        public async Task<IActionResult> Update(int id,ProfileImageDto profileImageDto)
+        [HttpPost("profile/image/{id}")]
+        public async Task<IActionResult> Update(int id,[FromForm] ProfileImageDto profileImageDto)
         {
             var response = await _userServices.UpdateImage(id, profileImageDto.File);
 
