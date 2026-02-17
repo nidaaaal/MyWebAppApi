@@ -9,10 +9,12 @@ namespace MyWebAppApi.Controllers
     public class AccountController : Controller
     {
         private readonly IUserServices _userServices;
+        private readonly ILogger<AccountController> _logger;
 
-        public AccountController(IUserServices userServices)
+        public AccountController(IUserServices userServices,ILogger<AccountController> logger)
         {
             _userServices = userServices;
+            _logger = logger;
 
         }
 

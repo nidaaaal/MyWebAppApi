@@ -31,7 +31,7 @@ namespace MyWebAppApi.MIddleware
             }
             catch(Exception ex)
             {
-                _logger.LogError(ex, "unhandled exception");
+                _logger.LogError(ex, "Unhandled exception occurred");
 
                 await HandleExceprion(httpContext, ex);
             }

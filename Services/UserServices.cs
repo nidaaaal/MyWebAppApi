@@ -11,86 +11,116 @@ namespace MyWebAppApi.Services
     public class UserServices : IUserServices
     {
         private readonly IUserRepository _userRepository;
+        private readonly ILogger<UserServices> _logger;
         private readonly IWebHostEnvironment _env;
 
-        public UserServices(IUserRepository userRepository,IWebHostEnvironment hostEnvironment) 
+        public UserServices(IUserRepository userRepository, IWebHostEnvironment hostEnvironment, ILogger<UserServices> logger) 
         { 
             _userRepository = userRepository;
             _env = hostEnvironment;
+            _logger = logger;
         }
 
         public async Task<ApiResponse<string>> RegisterUser(RegisterRequestDto dto)
         {
-            var validateUsername = InputIdentifier.Identify(dto.UserName);
+                var validateUsername = InputIdentifier.Identify(dto.UserName);
 
-            if (validateUsername == InputIdentifier.InputType.Invalid) return ApiResponseBuilder.Fail<string>("Invalid Email or Phone Number format",400);
+                if (validateUsername == InputIdentifier.InputType.Invalid)
+                {
+                    _logger.LogWarning("Registration Failed : Invalid Username Format for {UserName}", dto.UserName);
+                    return ApiResponseBuilder.Fail<string>("Invalid Email or Phone Number format", 400);
+                }
 
-            var passwordCheck = PasswordValidator.Validate(dto.Password);
+                var passwordCheck = PasswordValidator.Validate(dto.Password);
 
-            if (!passwordCheck.IsValid) return ApiResponseBuilder.Fail<string>(passwordCheck.ErrorMessage, 400);
+                if (!passwordCheck.IsValid)
+                {
+                    _logger.LogWarning("Registration Failed : Weak Password for {UserName}", dto.UserName);
+                    return ApiResponseBuilder.Fail<string>(passwordCheck.ErrorMessage, 400);
+                }
 
 
-           string hashedPass =  BCrypt.Net.BCrypt.HashPassword(dto.Password);
+                string hashedPass = BCrypt.Net.BCrypt.HashPassword(dto.Password);
 
-            var Today = DateTime.Today;
-            int age = Today.Year - dto.DateOfBirth.Year;
+                var Today = DateTime.Today;
+                int age = Today.Year - dto.DateOfBirth.Year;
 
-            if(dto.DateOfBirth.Month > Today.Month || (dto.DateOfBirth.Month == Today.Month && Today.Day < dto.DateOfBirth.Day))
-            {
-                age--;
-            }
-            if (age < 13)
-            {
-                return ApiResponseBuilder.Fail<string>("Underage!", 500);
-            }
+                if (dto.DateOfBirth.Month > Today.Month || (dto.DateOfBirth.Month == Today.Month && Today.Day < dto.DateOfBirth.Day))
+                {
+                    age--;
+                }
+                if (age < 13)
+                {
+                    _logger.LogWarning("Registration rejected: Underage user {UserName}", dto.UserName);
+                    return ApiResponseBuilder.Fail<string>("Underage!", 500);
+                }
 
-            try
-            {
                 int result = await _userRepository.RegisterUser(dto, hashedPass, age);
 
                 if (result == -1)
                 {
+                    _logger.LogInformation("Registration rejected : Registration attempt with existing username {UserName}", dto.UserName);
+
                     return ApiResponseBuilder.Fail<string>("Username already exists.", 409);
 
                 }
                 if (result == 1)
                 {
+                    _logger.LogInformation("User {UserName} registered successfully", dto.UserName);
+
                     return ApiResponseBuilder.Success<string>(null!, "User registered successfully.");
                 }
-                else
-                {
-                    return ApiResponseBuilder.Fail<string>("User registration failed.", 500);
 
-                }
-            }
-            catch (Exception ex)
-            {
-                return ApiResponseBuilder.Fail<string>($"An error occurred: {ex.Message}", 500);
+                _logger.LogError("Unexpected registration result for {UserName}",dto.UserName);
 
+                return ApiResponseBuilder.Fail<string>("User registration failed.",500);
             }
-        }
 
         public async Task<ApiResponse<int>> LoginUser(LoginRequestDto dto)
         {
-            var result = await _userRepository.GetUserByUsername(dto.UserName);
+            var user = await _userRepository.GetUserByUsername(dto.UserName);
 
-            if (result == null) return ApiResponseBuilder.Fail<int>("No user exists with the username",404);
+            if (user == null)
+            {
+                _logger.LogWarning("Login failed: User {UserName} not found.", dto.UserName);
+                return ApiResponseBuilder.Fail<int>("Invalid Credentials", 401);
+            }
 
-            if (!BCrypt.Net.BCrypt.Verify(dto.Password, result.HashedPassword)) return ApiResponseBuilder.Fail<int>("Invalid Credentials",401);
+            if (!BCrypt.Net.BCrypt.Verify(dto.Password, user.HashedPassword))
+            {
+                _logger.LogWarning("Login failed: Invalid password for {UserName}.", dto.UserName);
+                return ApiResponseBuilder.Fail<int>("Invalid Credentials", 401);
+            }
 
-            await _userRepository.SaveLogin(result.Id);
+            await _userRepository.SaveLogin(user.Id);
 
-            return ApiResponseBuilder.Success<int>(result.Id, "Login Successful");
+            _logger.LogInformation("User {UserId} logged in successfully.", user.Id);
+
+            return ApiResponseBuilder.Success<int>(user.Id, "Login Successful");
         }
+
         public async Task<ApiResponse<Users?>> GetUserProfile(int id)
         {
-            var result = await _userRepository.GetUserProfile(id);
-            if (result == null) return ApiResponseBuilder.Fail<Users?>("User not found", 404);
-            return ApiResponseBuilder.Success<Users?>(result, "User profile retrieved successfully");
+            _logger.LogInformation("Fetching profile for User {UserId}", id);
+
+            var user = await _userRepository.GetUserProfile(id);
+
+            if (user == null)
+            {
+                _logger.LogWarning("UserProfile retrieval failed: User {UserId} not found.", id);
+
+                return ApiResponseBuilder.Fail<Users?>("User not found", 404);
+            }
+
+            _logger.LogWarning("UserProfile retrieval success for User {UserId}.", id);
+
+            return ApiResponseBuilder.Success<Users?>(user, "User profile retrieved successfully");
         }
 
         public async Task<ApiResponse<string>> UpdateUserProfile(int id, UpdateProfileDto updateProfileDto)
         {
+            _logger.LogInformation("Updating profile for User {UserId}", id);
+
             var Today = DateTime.Today;
             int age = Today.Year - updateProfileDto.DateOfBirth.Year;
 
@@ -99,38 +129,63 @@ namespace MyWebAppApi.Services
                 age--;
             }
 
+            if (age < 13)
+            {
+                _logger.LogWarning("Registration rejected: Underage user {id}", id);
+                return ApiResponseBuilder.Fail<string>("Underage!", 500);
+            }
+
             var result = await _userRepository.UpdateUserProfile(id, updateProfileDto,age);
 
             if(result.ResultCode == 1)
             {
+                _logger.LogInformation("Profile updated successfully for User {UserId}.", id);
                 return ApiResponseBuilder.Success<string>(null!,result.Message ?? "Profile Updated Sucessfully");
             }
             if(result.ResultCode == -1)
             {
+                _logger.LogWarning("Update failed: User {UserId} not found.", id);
                 return ApiResponseBuilder.Fail<string>(result.Message ?? "user notfound",404);
             }
 
+            _logger.LogError("Update failed for User {UserId}. Server Code: {ResultCode}", id, result.ResultCode);
             return ApiResponseBuilder.Fail<string>(result.Message ?? "server down", 500);
         }
 
 
         public async Task<ApiResponse<string>>ChangePassword(int id, string oldpassword, string password)
         {
-            if(oldpassword == password) return ApiResponseBuilder.Fail<string>("New password cannot be the same as the old password.", 400);
-
+            if (oldpassword == password)
+            {
+                _logger.LogWarning("Password change failed: New password is same as old for User {UserId}", id);
+                return ApiResponseBuilder.Fail<string>("New password cannot be the same as the old password.", 400);
+            }
             var currentPassword = await _userRepository.GetPasswordById(id);
 
-            if (currentPassword == null) return ApiResponseBuilder.Fail<string>("User Notfound !",404);
+            if (currentPassword == null)
+            {
+                _logger.LogWarning("Password change failed: User {UserId} not found.", id);
+                return ApiResponseBuilder.Fail<string>("User Notfound !", 404);
+            }
 
-            if (!BCrypt.Net.BCrypt.Verify(oldpassword, currentPassword)) return ApiResponseBuilder.Fail<string>("You Entered a wrong Password!" ,401);
+            if (!BCrypt.Net.BCrypt.Verify(oldpassword, currentPassword))
+            {
+                _logger.LogWarning("Password change failed: Invalid current password for User {UserId}", id);
+                return ApiResponseBuilder.Fail<string>("Invalid current password!", 401);
+            }
 
             string hashedNewPassword = BCrypt.Net.BCrypt.HashPassword(password);
 
             var response = await _userRepository.SavePassword(id, hashedNewPassword);
 
 
-            if (!response) return ApiResponseBuilder.Fail<string>( "password changing failed" ,500);
+            if (!response)
+            {
+                _logger.LogError("Password change failed for User {UserId}: Database save error.", id);
+                return ApiResponseBuilder.Fail<string>("password changing failed", 500);
+            }
 
+            _logger.LogInformation("Password changed successfully for User {UserId}", id);
             return ApiResponseBuilder.Success<string>(null!,"Password Changed successfully");
 
         }
@@ -170,7 +225,13 @@ namespace MyWebAppApi.Services
 
             var response = await _userRepository.UploadImage(id, bytes, relativePath);
 
-            if (!response) return ApiResponseBuilder.Fail<string>("Uploadig Image Failed!",500);
+            if (!response)
+            {
+                _logger.LogError("Database update failed for image upload. User: {UserId}", id);
+                return ApiResponseBuilder.Fail<string>("Uploadig Image Failed!", 500);
+            }
+
+            _logger.LogInformation("Profile image updated successfully for User {UserId}", id);
 
             return ApiResponseBuilder.Success<string>(null!, "Profile Updated Successfully");
         }

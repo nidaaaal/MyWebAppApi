@@ -207,8 +207,6 @@ namespace MyWebAppApi.Repository
 
         public async Task<bool> UploadImage(int id, byte[] imageBytes, string imagePath)
         {
-            try
-            {
                 string sql = "UPDATE app.users SET profile_image = @img, profile_image_path = @path, profile_image_updated_at = GETDATE() WHERE user_id = @id;";
                 await using var conn = GetConnection();
                 await using SqlCommand cmd = new SqlCommand(sql, conn);
@@ -220,11 +218,6 @@ namespace MyWebAppApi.Repository
                 var result = await cmd.ExecuteNonQueryAsync();
                 Debug.WriteLine($"dbresult : {result}");
                 return result > 0;
-            }
-            catch (Exception ex)
-            {
-                throw new Exception(ex.Message);
-            }
         }
     }
 }
