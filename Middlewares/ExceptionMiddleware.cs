@@ -5,7 +5,7 @@ using System.Net;
 using System.Text.Json;
 using System.Threading.Tasks;
 
-namespace MyWebAppApi.MIddleware
+namespace MyWebAppApi.Middlewares
 {
     // You may need to install the Microsoft.AspNetCore.Http.Abstractions package into your project
     public class ExceptionMiddleware

@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using MyWebAppApi.DTOs;
 using MyWebAppApi.Services.Interfaces;
 
@@ -26,17 +27,41 @@ namespace MyWebAppApi.Controllers
             return Ok(response);
 
         }
+
         [HttpPost("login")]
         public async Task<IActionResult> Login(LoginRequestDto requestDto)
         {
             var response = await _userServices.LoginUser(requestDto);
+            var token = response.Data?.Token;
+
+            if (response.IsSuccess && token != null)
+            {
+                Response.Cookies.Append("jwt", token, new CookieOptions
+                {
+                    HttpOnly = true,
+                    Secure = true,
+                    SameSite = SameSiteMode.None,
+                    Expires = DateTimeOffset.UtcNow.AddDays(7)
+
+                });
+            };
+
             return Ok(response);
         }
 
-        [HttpPatch("password/{id}")]
-        public async Task<IActionResult> ChangePassword(int id, PasswordChangeDto passwordChangeDto)
+
+        [HttpPost("logout")]
+        public IActionResult Logout()
         {
-            var response = await _userServices.ChangePassword(id, passwordChangeDto.OldPassword, passwordChangeDto.NewPassword);
+            Response.Cookies.Delete("jwt");
+            return Ok(ApiResponseBuilder.Success<string>(null!,"Logged out successfully"));
+        }
+
+        [Authorize]
+        [HttpPatch("password")]
+        public async Task<IActionResult> ChangePassword(PasswordChangeDto passwordChangeDto)
+        {
+            var response = await _userServices.ChangePassword(passwordChangeDto.OldPassword, passwordChangeDto.NewPassword);
             return Ok(response);
         }
     }

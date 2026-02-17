@@ -1,4 +1,6 @@
-using MyWebAppApi.MIddleware;
+using MyWebAppApi.Extensions;
+using MyWebAppApi.Helper;
+using MyWebAppApi.Middlewares;
 using MyWebAppApi.Repository;
 using MyWebAppApi.Repository.Interfaces;
 using MyWebAppApi.Services;
@@ -12,9 +14,17 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
 
 builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddJwtAuthentication(builder.Configuration);
 builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerWithJwt();
+
+
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IUserServices, UserServices>();
+builder.Services.AddScoped<IJwtHelper,JwtHelper>();
+builder.Services.AddScoped<IUserFinder, UserFinder>();
+builder.Services.AddHttpContextAccessor();
+
 
 Log.Logger = new LoggerConfiguration()
     .MinimumLevel.Information()
@@ -27,7 +37,7 @@ Log.Logger = new LoggerConfiguration()
         retainedFileCountLimit: 31,
         shared:true,
         outputTemplate:
-                "{Timestamp:yyyy-MM-dd HH:MM:SS} | {Level:u3} | {Message:1j}{NewLine}{Exception}"
+                "{Timestamp:yyyy-MM-dd HH:mm:ss} | {Level:u3} | {Message:1j}{NewLine}{Exception}"
         )).CreateLogger();
 
 builder.Host.UseSerilog();
@@ -50,6 +60,8 @@ app.UseStaticFiles();
 
 
 app.UseAuthorization();
+app.UseUserIdMiddleware();
+
 
 
 app.MapControllers();

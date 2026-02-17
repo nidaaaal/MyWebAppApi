@@ -1,10 +1,12 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using MyWebAppApi.DTOs;
 using MyWebAppApi.Services.Interfaces;
 
 namespace MyWebAppApi.Controllers
 {
+    [Authorize]
     [Route("api/user")]
     [ApiController]
     public class UserController : ControllerBase
@@ -17,24 +19,24 @@ namespace MyWebAppApi.Controllers
 
         }
 
-        [HttpGet("profile/{id}")]
-        public async Task<IActionResult> GetUserProfile(int id)
+        [HttpGet("profile")]
+        public async Task<IActionResult> GetUserProfile()
         {
-            var response = await _userServices.GetUserProfile(id);
+            var response = await _userServices.GetUserProfile();
             return Ok(response);
         }
 
-        [HttpPut("profile/{id}")]
-        public async Task<IActionResult> UpdateUserProfile(int id,UpdateProfileDto updateProfileDto)
+        [HttpPut("profile")]
+        public async Task<IActionResult> UpdateUserProfile(UpdateProfileDto updateProfileDto)
         {
-            var response = await _userServices.UpdateUserProfile(id,updateProfileDto);
+            var response = await _userServices.UpdateUserProfile(updateProfileDto);
             return Ok(response);
         }
 
-        [HttpPost("profile/image/{id}")]
-        public async Task<IActionResult> Update(int id,[FromForm] ProfileImageDto profileImageDto)
+        [HttpPost("profile/image")]
+        public async Task<IActionResult> Update([FromForm] ProfileImageDto profileImageDto)
         {
-            var response = await _userServices.UpdateImage(id, profileImageDto.File);
+            var response = await _userServices.UpdateImage(profileImageDto.File);
 
             return Ok(response);
         }
