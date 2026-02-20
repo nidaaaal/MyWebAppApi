@@ -24,6 +24,7 @@ builder.Services.AddScoped<IUserServices, UserServices>();
 builder.Services.AddScoped<IJwtHelper,JwtHelper>();
 builder.Services.AddScoped<IUserFinder, UserFinder>();
 builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped<IAdminService, AdminService>();
 
 
 Log.Logger = new LoggerConfiguration()

@@ -23,9 +23,18 @@ namespace MyWebAppApi.Middlewares
 
                     httpContext.Items["userId"] = userId;
                 }
+
+                var userRoleClaims = httpContext.User.FindFirst(ClaimTypes.Role);
+                if (userRoleClaims != null)
+                {
+                    httpContext.Items["userRole"] = userRoleClaims.Value;
+                }
             }
-           await _next(httpContext);
+
+            await _next(httpContext);
         }
+
+
     }
 
     public static class UserIdMiddlewareExtensions

@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using MyWebAppApi.DTOs;
+using MyWebAppApi.Helper;
 using MyWebAppApi.Services.Interfaces;
 
 namespace MyWebAppApi.Controllers
@@ -11,11 +12,13 @@ namespace MyWebAppApi.Controllers
     {
         private readonly IUserServices _userServices;
         private readonly ILogger<AccountController> _logger;
+        private readonly IUserFinder _userFinder;
 
-        public AccountController(IUserServices userServices,ILogger<AccountController> logger)
+        public AccountController(IUserServices userServices,ILogger<AccountController> logger,IUserFinder userFinder)
         {
             _userServices = userServices;
             _logger = logger;
+            _userFinder = userFinder;
 
         }
 
@@ -32,28 +35,16 @@ namespace MyWebAppApi.Controllers
         public async Task<IActionResult> Login(LoginRequestDto requestDto)
         {
             var response = await _userServices.LoginUser(requestDto);
-            var token = response.Data?.Token;
-
-            if (response.IsSuccess && token != null)
-            {
-                Response.Cookies.Append("jwt", token, new CookieOptions
-                {
-                    HttpOnly = true,
-                    Secure = true,
-                    SameSite = SameSiteMode.None,
-                    Expires = DateTimeOffset.UtcNow.AddDays(7)
-
-                });
-            };
 
             return Ok(response);
         }
 
-
+        [Authorize]
         [HttpPost("logout")]
         public IActionResult Logout()
         {
-            Response.Cookies.Delete("jwt");
+            var id = _userFinder.GetId();
+            _logger.LogInformation("User {userId} logged out", id);
             return Ok(ApiResponseBuilder.Success<string>(null!,"Logged out successfully"));
         }
 

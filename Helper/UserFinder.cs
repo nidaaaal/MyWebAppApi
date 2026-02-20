@@ -21,5 +21,16 @@ namespace MyWebAppApi.Helper
 
             throw new Exception("No User found on The corresponding Id");
         }
+
+        public string GetRole()
+        {
+            if (_httpContextAccessor.HttpContext?.Items["userRole"] is string role)
+            {
+                return role;
+            }
+
+            throw new Exception("No User found on The corresponding Id");
+
+        }
     }
 }

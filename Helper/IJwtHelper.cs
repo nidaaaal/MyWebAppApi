@@ -1,10 +1,10 @@
-﻿using MyWebApp.Models;
+﻿using MyApp.Models;
 
 namespace MyWebAppApi.Helper
 {
     public interface IJwtHelper
     {
-        string GetJwtToken(Users user);
+        string GetJwtToken(Credential user);
 
     }
 }

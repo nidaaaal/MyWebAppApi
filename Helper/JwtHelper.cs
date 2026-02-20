@@ -1,4 +1,5 @@
 ﻿using Microsoft.IdentityModel.Tokens;
+using MyApp.Models;
 using MyWebApp.Models;
 using MyWebAppApi.Helper;
 using System.IdentityModel.Tokens.Jwt;
@@ -16,7 +17,7 @@ namespace MyWebAppApi.Extensions
 
         }
 
-        public string GetJwtToken(Users user)
+        public string GetJwtToken(Credential user)
         {
             var tokenHandler = new JwtSecurityTokenHandler();
             var key = Encoding.ASCII.GetBytes(_configuration["Jwt:Key"]);
@@ -24,6 +25,10 @@ namespace MyWebAppApi.Extensions
             var claims = new List<Claim>
         {
             new(ClaimTypes.NameIdentifier, user.Id.ToString()),
+            new(ClaimTypes.Name,user.UserName),
+            new(ClaimTypes.Role,user.Role)
+
+
             };
 
             var tokenDescriptor = new SecurityTokenDescriptor

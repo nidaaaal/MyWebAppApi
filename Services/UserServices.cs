@@ -1,10 +1,12 @@
 ﻿using BCrypt.Net;
 using Microsoft.AspNetCore.Http.HttpResults;
+using MyApp.Models;
 using MyWebApp.Models;
 using MyWebAppApi.DTOs;
 using MyWebAppApi.Helper;
 using MyWebAppApi.Repository.Interfaces;
 using MyWebAppApi.Services.Interfaces;
+using System.Data;
 
 namespace MyWebAppApi.Services
 {
@@ -100,19 +102,22 @@ namespace MyWebAppApi.Services
 
             await _userRepository.SaveLogin(user.Id);
 
-          string token =  _jwt.GetJwtToken(new Users { Id=user.Id});
+            string token =  _jwt.GetJwtToken(new Credential { Id=user.Id,UserName=user.UserName,Role = user.Role});
 
-
+            bool isAdmin = user.Role == "Admin";
             _logger.LogInformation("User {UserId} logged in successfully.", user.Id);
 
-            return ApiResponseBuilder.Success<AuthResponseDto>(new AuthResponseDto { Id=user.Id,Token=token}, "Login Successful");
+
+            return ApiResponseBuilder.Success<AuthResponseDto>(new AuthResponseDto { Id=user.Id,Token=token,IsAdmin=isAdmin}, "Login Successful");
         }
 
-        public async Task<ApiResponse<Users?>> GetUserProfile()
-        {
-            int id = _findUser.GetId();
 
-            _logger.LogInformation("Fetching profile for User {UserId}", id);
+
+        public async Task<ApiResponse<Users?>> GetUserProfile(int id)
+        {
+            var role = _findUser.GetRole();
+
+            _logger.LogInformation("Fetching profile for User {UserId} requested by {role}", id,role);
 
             var user = await _userRepository.GetUserProfile(id);
 
@@ -123,16 +128,15 @@ namespace MyWebAppApi.Services
                 return ApiResponseBuilder.Fail<Users?>("User not found", 404);
             }
 
-            _logger.LogWarning("UserProfile retrieval success for User {UserId}.", id);
+
+            _logger.LogWarning("UserProfile retrieval success for User {UserId} by {role}", id,role);
 
             return ApiResponseBuilder.Success<Users?>(user, "User profile retrieved successfully");
         }
 
-        public async Task<ApiResponse<string>> UpdateUserProfile(UpdateProfileDto updateProfileDto)
+        public async Task<ApiResponse<string>> UpdateUserProfile(int id,UpdateProfileDto updateProfileDto, string role)
         {
-            int id = _findUser.GetId();
-
-            _logger.LogInformation("Updating profile for User {UserId}", id);
+            _logger.LogInformation("Updating profile for User {UserId} requested by {role}", id,role);
 
             var Today = DateTime.Today;
             int age = Today.Year - updateProfileDto.DateOfBirth.Year;
@@ -148,11 +152,11 @@ namespace MyWebAppApi.Services
                 return ApiResponseBuilder.Fail<string>("Underage!", 500);
             }
 
-            var result = await _userRepository.UpdateUserProfile(id, updateProfileDto,age);
+            var result = await _userRepository.UpdateUserProfile(id, updateProfileDto,age,role);
 
             if(result.ResultCode == 1)
             {
-                _logger.LogInformation("Profile updated successfully for User {UserId}.", id);
+                _logger.LogInformation("Profile updated successfully for User {UserId} by {role}", id,role);
                 return ApiResponseBuilder.Success<string>(null!,result.Message ?? "Profile Updated Sucessfully");
             }
             if(result.ResultCode == -1)
@@ -205,9 +209,23 @@ namespace MyWebAppApi.Services
 
         }
 
-        public async Task<ApiResponse<string>> UpdateImage(IFormFile file)
+        public async Task<ApiResponse<ProfileImageDto>> GetCurrentProfilePath(int id) 
         {
-            int id = _findUser.GetId();
+            var role = _findUser.GetRole();
+
+            _logger.LogInformation("fetching profile Image for User {UserId} requested by {role}", id, role);
+
+            var imagePath = await _userRepository.GetImagePath(id);
+            _logger.LogInformation("User profile image retrived successfully");
+
+            return ApiResponseBuilder.Success(new ProfileImageDto { ExisngImagePath = imagePath });
+
+        }
+
+
+        public async Task<ApiResponse<string>> UpdateImage(int id,IFormFile file, string role)
+        {
+            _logger.LogInformation("Updating profile Image for User {UserId} requested by {role}", id, role);
 
             byte[] bytes;
 
@@ -240,7 +258,7 @@ namespace MyWebAppApi.Services
             string relativePath = $"/uploads/users/{id}/{fileName}";
 
 
-            var response = await _userRepository.UploadImage(id, bytes, relativePath);
+            var response = await _userRepository.UploadImage(id, bytes, relativePath,role);
 
             if (!response)
             {
@@ -248,7 +266,7 @@ namespace MyWebAppApi.Services
                 return ApiResponseBuilder.Fail<string>("Uploadig Image Failed!", 500);
             }
 
-            _logger.LogInformation("Profile image updated successfully for User {UserId}", id);
+            _logger.LogInformation("Profile image updated successfully for User {UserId} by {role}", id,role);
 
             return ApiResponseBuilder.Success<string>(null!, "Profile Updated Successfully");
         }
